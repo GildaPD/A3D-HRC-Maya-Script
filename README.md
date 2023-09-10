@@ -14,8 +14,8 @@ The export process may take some time depending on how long the animation is.
 # Credits:
 
 korenkonder for the JSON layout and PD Tool.
-ThisisHH for helping me and giving me some ideas.
+ThisisHH and some friends for helping me and giving me some ideas.
 
 # Note:
 
-If you find any issue, please contact me on my discord () Any feedback is appreciated!
+If you find any issue, please contact me on my discord (gilda.) Any feedback is appreciated!
