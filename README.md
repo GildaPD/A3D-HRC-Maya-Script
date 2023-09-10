@@ -8,7 +8,9 @@ Autodesk Maya 2022 is required to run the script.
 # How to use:
 
 Create a maya scene and load your animation IT IS IMPORTANT TO DELETE ALL THE MESHES IF THERE ARE ANY.
+
 In the main menu bar, select Windows > Settings/Preferences > Plug-in Manager and click "Browse" then search for the .py.
+
 The export process may take some time depending on how long the animation is.
 
 # Credits:
