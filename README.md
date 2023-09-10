@@ -14,6 +14,7 @@ The export process may take some time depending on how long the animation is.
 # Credits:
 
 korenkonder for the JSON layout and PD Tool.
+
 ThisisHH and some friends for helping me and giving me some ideas.
 
 # Note:
