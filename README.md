@@ -5,9 +5,9 @@ This is a .py that exports the relevant information from the maya scene to a JSO
 
 Autodesk Maya 2022 is required to run the script.
 
-PD_tool is required to convert the generated JSON to an A3DA
+PD_tool is required to convert the generated JSON to an A3DA.
 
-Noesis (in some special cases, this is explained below)
+Noesis (in some special cases, this is explained below).
 
 # How to use:
 
