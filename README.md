@@ -25,6 +25,6 @@ ThisisHH and some friends for helping me and giving me some ideas.
 
 # Notes:
 
-This script only works with a node hierarchy, if your animation has an armature I highly recommend opening your animation on noesis and exporting it as a .FBX, then re-open it again on Maya.
+This script only works with a node hierarchy, if your animation has an armature, I highly recommend opening your animation on noesis and exporting it as a .FBX, this may solve some issues related to the script not supporting this and refusing to export the animation. Then just re-open it again on Maya.
 
 If you find any issue, please contact me on my discord (gilda.) Any feedback is appreciated!
