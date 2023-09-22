@@ -4,7 +4,7 @@ import maya.cmds as cmds
 import math
 
 # InputName
-file_name = "A3D"
+file_name = "A3D2"
 
 # Maya Scene
 frame_start = int(cmds.playbackOptions(q=True, min=True))
@@ -18,6 +18,8 @@ relevant_nodes = [cmds.ls(node, shortNames=True)[0] for node in all_nodes if cmd
 # Function to calculate relative head positions for the entire animation
 def calculate_relative_head_positions(node_name):
     res = {"X": [], "Y": [], "Z": []}
+    prev_frame = None
+    prev_trans_x, prev_trans_y, prev_trans_z = None, None, None
     
     for frame in range(frame_start, frame_end + 1):
         cmds.currentTime(frame)
@@ -27,17 +29,25 @@ def calculate_relative_head_positions(node_name):
         trans_y = cmds.getAttr(f"{node_name}.translateY")
         trans_z = cmds.getAttr(f"{node_name}.translateZ")
 
-        # Store the relative head position for this frame
-        res["X"].append(keys(frame, trans_x))
-        res["Y"].append(keys(frame, trans_y))
-        res["Z"].append(keys(frame, trans_z))
+        # Check for NaN values
+        if not (math.isnan(trans_x) or math.isnan(trans_y) or math.isnan(trans_z)):
+            # Check if this frame has the same translation values as the previous frame
+            if (trans_x, trans_y, trans_z) != (prev_trans_x, prev_trans_y, prev_trans_z):
+                # Store the relative head position for this frame
+                res["X"].append(keys(frame, trans_x))
+                res["Y"].append(keys(frame, trans_y))
+                res["Z"].append(keys(frame, trans_z))
+
+            prev_trans_x, prev_trans_y, prev_trans_z = trans_x, trans_y, trans_z
 
     return res
 
 # Extract node rotation as Euler angles (XYZ order)
 def get_node_rotation(node_name):
     res_euler = []
-
+    prev_frame = None
+    prev_rotation_euler = None
+    
     for frame in range(frame_start, frame_end + 1):
         cmds.currentTime(frame)
         
@@ -45,8 +55,14 @@ def get_node_rotation(node_name):
         rotation_euler = cmds.xform(node_name, query=True, rotation=True, relative=True)
         rotation_euler = [math.radians(angle) for angle in rotation_euler]  # Convert to radians
 
-        # Store the relative head rotation for this frame
-        res_euler.append(keys(frame, rotation_euler))
+        # Check for NaN values
+        if not any(math.isnan(angle) for angle in rotation_euler):
+            # Check if this frame has the same rotation values as the previous frame
+            if rotation_euler != prev_rotation_euler:
+                # Store the relative head rotation for this frame
+                res_euler.append(keys(frame, rotation_euler))
+
+            prev_rotation_euler = rotation_euler
 
     return res_euler
 
@@ -72,9 +88,9 @@ for node_name in relevant_nodes:
     node_animation = {
         "Name": node_name,
         "Rot": {
-            "X": {"Type": "Linear", "Keys": [[i.frame, i.value[0]] for i in rot_euler]},
-            "Y": {"Type": "Linear", "Keys": [[i.frame, i.value[1]] for i in rot_euler]},
-            "Z": {"Type": "Linear", "Keys": [[i.frame, i.value[2]] for i in rot_euler]}
+            "X": {"Type": "Linear", "Keys": [[i.frame, i.value[0]] if not any(math.isnan(v) for v in i.value) else {"Type": "None"} for i in rot_euler]},
+            "Y": {"Type": "Linear", "Keys": [[i.frame, i.value[1]] if not any(math.isnan(v) for v in i.value) else {"Type": "None"} for i in rot_euler]},
+            "Z": {"Type": "Linear", "Keys": [[i.frame, i.value[2]] if not any(math.isnan(v) for v in i.value) else {"Type": "None"} for i in rot_euler]}
         },
         "Scale": {
             "X": {"Type": "Static", "Value": 1},
@@ -82,9 +98,9 @@ for node_name in relevant_nodes:
             "Z": {"Type": "Static", "Value": 1}
         },
         "Trans": {
-            "X": {"Type": "Linear", "Keys": [[i.frame, i.value] for i in trans_x]},
-            "Y": {"Type": "Linear", "Keys": [[i.frame, i.value] for i in trans_y]},
-            "Z": {"Type": "Linear", "Keys": [[i.frame, i.value] for i in trans_z]}
+            "X": {"Type": "Linear", "Keys": [[i.frame, i.value] if not math.isnan(i.value) else {"Type": "None"} for i in trans_x]},
+            "Y": {"Type": "Linear", "Keys": [[i.frame, i.value] if not math.isnan(i.value) else {"Type": "None"} for i in trans_y]},
+            "Z": {"Type": "Linear", "Keys": [[i.frame, i.value] if not math.isnan(i.value) else {"Type": "None"} for i in trans_z]}
         },
         "Visibility": {"Type": "Static", "Value": 1}
     }
@@ -101,6 +117,27 @@ for node_name in all_nodes:
             parent_index = node_index_map[parent_node_name]
             node_index = node_index_map[node_name]
             node_animations[node_index - 1]["Parent"] = parent_index
+
+# Convert tangent values to match DIVA format
+for node_animation in node_animations:
+    for transform_type in ["Rot", "Trans"]:
+        for axis in ["X", "Y", "Z"]:
+            key_list = node_animation[transform_type][axis]["Keys"]
+            for i in range(1, len(key_list)):
+                prev_key = key_list[i - 1]
+                current_key = key_list[i]
+
+                # Check if the previous key has enough elements to access the first tangent
+                if len(prev_key) > 2:
+                    # Check if the current_key has enough elements before modifying the third index
+                    if len(current_key) > 2:
+                        current_key[2] = prev_key[2]  # Set the second tangent to be the same as the first tangent of the previous keyframe
+                    else:
+                        current_key.append(prev_key[2])  # Add the second tangent from the previous keyframe
+                else:
+                    # If the previous key doesn't have enough elements, add the second tangent with a value of 0
+                    prev_key.append(0)
+                    current_key.insert(2, 0)
 
 # A3DA base structure
 A3DABase = {
